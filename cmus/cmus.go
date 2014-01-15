@@ -2,13 +2,14 @@ package cmus
 
 import (
 	"github.com/guelfey/go.dbus"
+	"strings"
 )
 
 var data string
 
 func Manager(notify chan int) {
 	con, _ := dbus.SessionBus()
-	con.BusObject().Call("org.freedesktop.DBus.AddMatch", 0, "member='track_change',interface='net.sourceforge.cmus'")
+	con.BusObject().Call("org.freedesktop.DBus.AddMatch", 0, "type='signal',interface='net.sourceforge.cmus'")
 	sig := make(chan *dbus.Signal, 10)
 	con.Signal(sig)
 
@@ -29,8 +30,12 @@ func Manager(notify chan int) {
 	}
 
 	format()
-	for _ = range sig {
-		format()
+	for s := range sig {
+		switch strings.TrimPrefix(s.Name, "net.sourceforge.cmus.") {
+		case "track_change": fallthrough
+		case "exit":
+			format()
+		}
 	}
 }
 
